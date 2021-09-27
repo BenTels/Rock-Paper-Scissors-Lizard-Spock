@@ -1,5 +1,11 @@
-class Game {
-    val myRole = PlayerRole.random()
+class Game () {
+    internal var _myRole: PlayerRole? = null
+    val myRole
+        get() = _myRole ?: PlayerRole.random()
+
+    constructor(forcedRole: PlayerRole) : this() {
+        _myRole = forcedRole
+    }
 
     fun playGame(): Unit {
         var chosen = false
