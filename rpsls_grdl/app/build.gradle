@@ -33,7 +33,7 @@ dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
 
     // Use the Kotlin JUnit integration.
-    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.2')
     testImplementation('org.junit.jupiter:junit-jupiter-engine:5.7.2')
@@ -50,6 +50,11 @@ compileTestKotlin {
 
 run {
     standardInput = System.in
+    standardOutput = System.out
+}
+
+test {
+    useJUnitPlatform()
 }
 
 application {
