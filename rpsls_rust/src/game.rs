@@ -1,6 +1,16 @@
-mod game {
+pub mod game {
+    use rand::Rng;
+    use crate::game::game::game_player_role::PlayerRole;
+    use crate::game::game::game_result::GameResult;
 
-    mod game_result {
+    pub fn do_game(user_role: &PlayerRole) -> (PlayerRole, GameResult) {
+        let mut rng = rand::thread_rng();
+        let game_role: PlayerRole = rng.gen();
+        let result = user_role.compare(&game_role);
+        (game_role, result)
+    }
+
+    pub mod game_result {
         use std::fmt::{Display, Formatter};
 
         #[derive(Debug)]
@@ -42,10 +52,18 @@ mod game {
         }
     }
 
-    mod game_player_role {
+    pub mod game_player_role {
+        use rand::Rng;
+        use rand::distributions::{Distribution, Standard};
         use std::fmt::{Display, Formatter};
+        use std::str::FromStr;
+
         use super::game_result::GameResult;
 
+        #[derive(Debug)]
+        #[derive(PartialEq)]
+        #[derive(Eq)]
+        #[derive(Hash)]
         pub enum PlayerRole {
             Rock, Paper, Scissors, Lizard, Spock
         }
@@ -61,7 +79,7 @@ mod game {
                }
            }
 
-            fn compare(&self, other: &PlayerRole) -> GameResult {
+            pub fn compare(&self, other: &PlayerRole) -> GameResult {
                 let diff = if self.index() <= other.index() { other.index() - self.index() } else { self.index() -  other.index() + 1};
                 return if diff == 0 {
                     GameResult::Draw
@@ -87,8 +105,38 @@ mod game {
             }
         }
 
+        impl FromStr for PlayerRole {
+            type Err = ();
+
+            fn from_str(name: &str) -> Result<Self, Self::Err> {
+                match name.to_ascii_uppercase().as_str() {
+                    "ROCK" => Ok(PlayerRole::Rock),
+                    "PAPER" => Ok(PlayerRole::Paper),
+                    "SCISSORS" => Ok(PlayerRole::Scissors),
+                    "LIZARD" => Ok(PlayerRole::Lizard),
+                    "SPOCK" => Ok(PlayerRole::Spock),
+                   _ => Err(())
+                }
+            }
+        }
+
+        impl Distribution<PlayerRole> for Standard {
+            fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> PlayerRole {
+                let draw = rng.gen_range(0..5);
+                match draw {
+                    0 => PlayerRole::Rock,
+                    1 => PlayerRole::Paper,
+                    2 => PlayerRole::Scissors,
+                    3 => PlayerRole::Lizard,
+                    4 => PlayerRole::Spock,
+                    _ => panic!("Drawing randomly from range does not work!!")
+                }
+            }
+        }
+
         #[cfg(test)]
         mod tests {
+            use std::collections::HashMap;
             use super::*;
 
             #[test]
@@ -135,6 +183,51 @@ mod game {
                 assert_eq!("SCISSORS", format!("{}", PlayerRole::Scissors));
                 assert_eq!("LIZARD", format!("{}", PlayerRole::Lizard));
                 assert_eq!("SPOCK", format!("{}", PlayerRole::Spock));
+            }
+
+            #[test]
+            fn when_enum_retrieved_by_name_then_okay() {
+                if let Ok(PlayerRole::Rock) = PlayerRole::from_str("rock") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Rock) = PlayerRole::from_str("ROCK") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Rock) = PlayerRole::from_str("RoCk") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Paper) = PlayerRole::from_str("paper") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Paper) = PlayerRole::from_str("PAPER") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Paper) = PlayerRole::from_str("pApEr") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Scissors) = PlayerRole::from_str("scissors") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Scissors) = PlayerRole::from_str("SCISSORS") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Scissors) = PlayerRole::from_str("sCISsOrs") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Lizard) = PlayerRole::from_str("lizard") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Lizard) = PlayerRole::from_str("LIZARD") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Lizard) = PlayerRole::from_str("Lizard") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Spock) = PlayerRole::from_str("spock") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Spock) = PlayerRole::from_str("SPOCK") { } else { panic!("Expecting different PlayerRole"); }
+                if let Ok(PlayerRole::Spock) = PlayerRole::from_str("spOck") { } else { panic!("Expecting different PlayerRole"); }
+            }
+
+            #[test]
+            fn do_some_random_role_selection() {
+                const SAMPLE_COUNT: i32 = 50000;
+                const EXPECTED_MEAN_VALUE: i32 = SAMPLE_COUNT / 5;
+                const VARIANCE: i32 = EXPECTED_MEAN_VALUE * 2 / 100;
+
+                let mut rng = rand::thread_rng();
+
+                let mut histogram:HashMap<PlayerRole, i32> = HashMap::new();
+                histogram.insert(PlayerRole::Rock, 0);
+                histogram.insert(PlayerRole::Paper, 0);
+                histogram.insert(PlayerRole::Scissors, 0);
+                histogram.insert(PlayerRole::Lizard, 0);
+                histogram.insert(PlayerRole::Spock, 0);
+
+                for idx in 0..SAMPLE_COUNT {
+                    let role: PlayerRole = rng.gen();
+                    histogram.entry(role).and_modify(|e| { *e += 1 });
+                }
+
+                for (key, val) in histogram.iter() {
+                    assert!(EXPECTED_MEAN_VALUE - VARIANCE <= *val, "{} count is out of range", key);
+                    assert!(*val <= EXPECTED_MEAN_VALUE + VARIANCE, "{} count is out of range", key)
+                }
             }
         }
     }
