@@ -219,7 +219,7 @@ pub mod game {
                 histogram.insert(PlayerRole::Lizard, 0);
                 histogram.insert(PlayerRole::Spock, 0);
 
-                for idx in 0..SAMPLE_COUNT {
+                for _idx in 0..SAMPLE_COUNT {
                     let role: PlayerRole = rng.gen();
                     histogram.entry(role).and_modify(|e| { *e += 1 });
                 }
